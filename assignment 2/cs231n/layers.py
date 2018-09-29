@@ -173,7 +173,16 @@ def batchnorm_forward(x, gamma, beta, bn_param):
         # variance, storing your result in the running_mean and running_var   #
         # variables.                                                          #
         #######################################################################
-        pass
+        mean = np.mean(x, axis=0)
+        var = np.var(x, axis=0)
+
+        xhat = (x - mean)/np.sqrt(var.T + eps)
+        out = gamma*xhat + beta
+
+        running_mean = momentum * running_mean + (1.0 - momentum) * mean
+        running_var = momentum * running_var + (1.0 - momentum) * var
+
+        cache = (mean, var, xhat, x, gamma, beta, eps)
         #######################################################################
         #                           END OF YOUR CODE                          #
         #######################################################################
@@ -184,7 +193,8 @@ def batchnorm_forward(x, gamma, beta, bn_param):
         # then scale and shift the normalized data using gamma and beta.      #
         # Store the result in the out variable.                               #
         #######################################################################
-        pass
+        xhat = (x - running_mean)/np.sqrt(running_var.T + eps)
+        out = gamma * xhat + beta
         #######################################################################
         #                          END OF YOUR CODE                           #
         #######################################################################
@@ -220,11 +230,18 @@ def batchnorm_backward(dout, cache):
     # TODO: Implement the backward pass for batch normalization. Store the    #
     # results in the dx, dgamma, and dbeta variables.                         #
     ###########################################################################
-    pass
-    ###########################################################################
-    #                             END OF YOUR CODE                            #
-    ###########################################################################
+    (mean, var, xhat, x, gamma, beta, eps) = cache
+    m = x.shape[0]
+    dbeta = np.sum(dout, axis=0)
+    dgamma = np.sum(dout * xhat, axis=0)
 
+    dxhat = dout * gamma
+
+    dvar = -.5 * gamma * np.sum(dout*(x-mean), axis=0)* (var + eps)**(-3./2.)
+    dmean = - gamma * np.sum(dout, axis=0) / np.sqrt(var + eps)
+    dx = dxhat/np.sqrt(var + eps) + 2. * dvar * (x-mean) / m + dmean/m
+
+    
     return dx, dgamma, dbeta
 
 
@@ -562,3 +579,32 @@ def softmax_loss(x, y):
     dx[np.arange(N), y] -= 1
     dx /= N
     return loss, dx
+
+def batch_relu_forward(x, w, b, gamma, beta, bn_param):
+    """
+    Convenience layer that performs an affine transform followed
+    by batchnorm and ReLU.
+
+    Inputs:
+    - x: Input to the affine layer
+    - w, b: Weights for the affine layer
+
+    Returns a tuple of:
+    - out: Output from the ReLU
+    - cache: Object to give to the backward pass
+    """
+    a, fc_cache = affine_forward(x, w, b)
+    out_batch, batch_cache = batchnorm_forward(a, gamma, beta, bn_param)
+    out, relu_cache = relu_forward(out_batch)
+    cache = (fc_cache, batch_cache, relu_cache)
+    return out, cache
+
+def batch_relu_backward(dout, cache):
+    """
+    Backward pass for the affine-batchnorm-relu convenience layer.
+    """
+    fc_cache, batch_cache, relu_cache = cache
+    da = relu_backward(dout, relu_cache)
+    dy, dgamma, dbeta = batchnorm_backward_alt(da, batch_cache)
+    dx, dw, db = affine_backward(dy, fc_cache)
+    return dx, dw, db, dgamma, dbeta

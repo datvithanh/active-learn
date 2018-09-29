@@ -140,6 +140,7 @@ def adam(x, dx, config=None):
     # the next_x variable. Don't forget to update the m, v, and t variables   #
     # stored in config.                                                       #
     ###########################################################################
+    config['t'] += 1
     m = config['m']
     v = config['v']
     m = config['beta1'] * m + (1-config['beta1'])*dx
