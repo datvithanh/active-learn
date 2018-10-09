@@ -48,7 +48,25 @@ class ThreeLayerConvNet(object):
         # hidden affine layer, and keys 'W3' and 'b3' for the weights and biases   #
         # of the output affine layer.                                              #
         ############################################################################
-        pass
+        # Get input dimensions
+        C, H, W = input_dim
+
+        # Compute max pooling filter dimensions
+        pool_param = {'pool_height': 2, 'pool_width': 2, 'stride': 2}
+        HP = int((H-pool_param['pool_height'])/pool_param['stride']+1)
+        WP = int((W-pool_param['pool_width'])/pool_param['stride']+1)
+
+        # Set weights and biases dimension
+        weigths_dim = [(num_filters, C, filter_size, filter_size),
+                        (HP*WP*num_filters, hidden_dim),
+                        (hidden_dim, num_classes)]
+        biases_dim = [num_filters, hidden_dim, num_classes]
+
+        # Initialize weights and biases
+        for i in range(1,4):
+            self.params['W%d' %i] = np.random.normal(loc=0.0, scale=weight_scale,
+                                                    size=weigths_dim[i-1])
+            self.params['b%d' %i] = np.zeros(biases_dim[i-1])
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -70,7 +88,6 @@ class ThreeLayerConvNet(object):
         # pass conv_param to the forward pass for the convolutional layer
         filter_size = W1.shape[2]
         conv_param = {'stride': 1, 'pad': (filter_size - 1) // 2}
-
         # pass pool_param to the forward pass for the max-pooling layer
         pool_param = {'pool_height': 2, 'pool_width': 2, 'stride': 2}
 
@@ -80,7 +97,13 @@ class ThreeLayerConvNet(object):
         # computing the class scores for X and storing them in the scores          #
         # variable.                                                                #
         ############################################################################
-        pass
+        cache = {}
+        conv_out, cache["conv"] = conv_forward_naive(X, W1, b1, conv_param)
+        relu1_out, cache["relu1"] = relu_forward(conv_out)
+        pool_out, cache["pool"] = max_pool_forward_naive(relu1_out, pool_param)
+        print(W2.shape)
+        # affine1_out, cache["affine1"] = affine_forward(pool_out)
+
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################

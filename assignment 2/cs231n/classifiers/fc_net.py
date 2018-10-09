@@ -175,22 +175,17 @@ class FullyConnectedNet(object):
         # beta2, etc. Scale parameters should be initialized to one and shift      #
         # parameters should be initialized to zero.                                #
         ############################################################################
-        for index, dim in enumerate(hidden_dims):
-            if(index == 0):
-                self.params['W1'] = weight_scale * np.random.randn(input_dim, dim)
-                self.params['b1'] = np.zeros(dim)
-                self.params['gamma1'] = np.ones(dim)
-                self.params['beta1'] = np.zeros(dim)
-                continue
-            self.params['W' + str(index+1)] = weight_scale * np.random.randn(hidden_dims[index-1], dim)
-            self.params['b' + str(index+1)] = np.zeros(dim)
-            self.params['gamma' + str(index+1)] = np.ones(dim)
-            self.params['beta' + str(index+1)] = np.zeros(dim)
-        self.params['W' + str(len(hidden_dims)+1)] = weight_scale * np.random.randn(hidden_dims[-1], num_classes)
-        self.params['b' + str(len(hidden_dims)+1)] = np.zeros(num_classes)
-        self.params['gamma' + str(len(hidden_dims)+1)] = np.ones(num_classes)
-        self.params['beta' + str(len(hidden_dims)+1)] = np.zeros(num_classes)
-        # print(self.params)
+        net_dims = [input_dim]+hidden_dims+[num_classes]
+
+        for i in range(self.num_layers):
+            self.params['W%d' %(i+1)] = np.random.normal(loc=0.0,
+                                                         scale=weight_scale,
+                                                         size=(net_dims[i],
+                                                         net_dims[i+1]))
+            self.params['b%d' %(i+1)] = np.zeros(net_dims[i+1])
+            if (self.use_batchnorm) & (i!=self.num_layers-1):
+                self.params['gamma%d' %(i+1)] = np.ones(net_dims[i+1])
+                self.params['beta%d' %(i+1)] = np.zeros(net_dims[i+1])
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -234,6 +229,7 @@ class FullyConnectedNet(object):
         if self.use_batchnorm:
             for bn_param in self.bn_params:
                 bn_param['mode'] = mode
+
         scores = None
         ############################################################################
         # TODO: Implement the forward pass for the fully-connected net, computing  #
@@ -247,9 +243,10 @@ class FullyConnectedNet(object):
         # self.bn_params[1] to the forward pass for the second batch normalization #
         # layer, etc.                                                              #
         ############################################################################
-        cache = {}
         scores = {}
+        cache = {}
         dropout_cache = {}
+
         scores[0] = X
 
         if self.use_batchnorm:
@@ -275,7 +272,6 @@ class FullyConnectedNet(object):
                                           self.params['W%d' %i],
                                           self.params['b%d' %i]
                                           )
-        # Forward flow without batchnorm
         else:
             for i in range(1, self.num_layers+1):
                 if i!=self.num_layers:
@@ -296,14 +292,14 @@ class FullyConnectedNet(object):
                                           self.params['b%d' %i]
                                           )
 
-
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
 
         # If test mode return early
         if mode == 'test':
-            return scores
+            return scores[self.num_layers]
+
         loss, grads = 0.0, {}
         ############################################################################
         # TODO: Implement the backward pass for the fully-connected net. Store the #
@@ -320,11 +316,9 @@ class FullyConnectedNet(object):
         ############################################################################
         loss, dscores = softmax_loss(scores[self.num_layers], y)
 
-        # Add regularization to the loss function
         for i in range(1, self.num_layers+1):
             loss += 0.5*self.reg*np.sum(self.params['W%d' %i]*self.params['W%d' %i])
 
-        # Backpropagation with batchnorm
         if self.use_batchnorm:
             for i in range(self.num_layers, 0, -1):
                 if i!=self.num_layers:
@@ -335,17 +329,14 @@ class FullyConnectedNet(object):
                                                                 dscores,
                                                                 cache[i]
                                                                 )
-                    # Add regularization to the weights gradient
                     grads['W%d' %i] += self.reg*self.params['W%d' %i]
                 else:
                     dscores, grads['W%d' %i], grads['b%d' %i] = affine_backward(
                                                                 dscores,
                                                                 cache[i]
                                                                 )
-                    # Add regularization to the weights gradient
                     grads['W%d' %i] += self.reg*self.params['W%d' %i]
 
-        # Backpropagation without batchnorm
         else:
             for i in range(self.num_layers, 0, -1):
                 if i!=self.num_layers:
@@ -353,15 +344,14 @@ class FullyConnectedNet(object):
                         dscores = dropout_backward(dscores, dropout_cache[i])
                     dscores, grads['W%d' %i], grads['b%d' %i] = affine_relu_backward(
                                                                 dscores, cache[i])
-                    # Add regularization to the weights gradient
                     grads['W%d' %i] += self.reg*self.params['W%d' %i]
                 else:
                     dscores, grads['W%d' %i], grads['b%d' %i] = affine_backward(
                                                                 dscores,
                                                                 cache[i]
                                                                 )
-                    # Add regularization to the weights gradient
                     grads['W%d' %i] += self.reg*self.params['W%d' %i]
+                    
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
