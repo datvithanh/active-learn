@@ -223,6 +223,7 @@ def get_image_path(image_lists, label_name, index, image_dir, category):
     tf.logging.fatal('Label %s has no images in the category %s.',
                      label_name, category)
   print(category_list)
+  print(len(category))
   mod_index = index % len(category_list)
   base_name = category_list[mod_index]
   sub_dir = label_lists['dir']
