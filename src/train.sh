@@ -5,4 +5,4 @@ python retrain.py \
   --summaries_dir=tf_files/training_summaries/basic \
   --output_graph=tf_files/retrained_graph.pb \
   --output_labels=tf_files/retrained_labels.txt \
-  --image_dir=/home/datasets/msceleb/
+  --image_dir=/home/datasets/msceleb/extracted_images
