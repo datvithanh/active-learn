@@ -188,6 +188,8 @@ def create_image_lists(image_dir, testing_percentage, validation_percentage):
         testing_images.append(base_name)
       else:
         training_images.append(base_name)
+      if len(file_list) == 1:
+        training_images.append(base_name)
     result[label_name] = {
         'dir': dir_name,
         'training': training_images,
