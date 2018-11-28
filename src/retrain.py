@@ -181,9 +181,10 @@ def create_image_lists(image_dir, testing_percentage, validation_percentage):
       percentage_hash = ((int(hash_name_hashed, 16) %
                           (MAX_NUM_IMAGES_PER_CLASS + 1)) *
                          (100.0 / MAX_NUM_IMAGES_PER_CLASS))
-      if percentage_hash < validation_percentage:
+      if len(validation_images) == 0:
         validation_images.append(base_name)
-      elif percentage_hash < (testing_percentage + validation_percentage):
+      elif percentage_hash < validation_percentage:
+      # elif percentage_hash < (testing_percentage + validation_percentage):
         testing_images.append(base_name)
       else:
         training_images.append(base_name)
