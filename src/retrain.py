@@ -97,6 +97,8 @@ from tensorflow.python.util import compat
 
 FLAGS = None
 
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
 # These are all parameters that are tied to the particular model architecture
 # we're using for Inception v3. These include things like tensor names and their
 # sizes. If you want to adapt this script to work with another model, you will
@@ -833,7 +835,7 @@ def main(_):
       FLAGS.flip_left_right, FLAGS.random_crop, FLAGS.random_scale,
       FLAGS.random_brightness)
 
-  with tf.Session(graph=graph) as sess:
+  with tf.Session(graph=graph, config=config) as sess:
 
     if do_distort_images:
       # We will be applying distortions, so setup the operations we'll need.
